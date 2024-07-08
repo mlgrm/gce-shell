@@ -11,7 +11,8 @@ gcloud compute instances create "$HOST" \
 	--zone=$ZONE \
 	--machine-type="e2-micro" \
 	--image-project="debian-cloud" \
-	--image-family="debian-12" 
+	--image-family="debian-12" \
+	--service-account="$SERVICE_ACCOUNT"
 
 # wait for server to boot
 sleep 15
