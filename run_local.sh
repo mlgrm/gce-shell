@@ -1,10 +1,8 @@
 #!/bin/bash
 
-DEBUG=true
 if [ -f ".env" ]; then source .env; fi
 set -e
 if [ ! -z "$DEBUG" ]; then set -x; fi
-
 
 gcloud compute instances create "$HOST" \
 	--project="$PROJECT" \
@@ -21,8 +19,18 @@ do
 	sleep 5
 done
 
+if [ ! -z "$SERVICE_ACCOUNT" ]
+then
+	if [ ! -f "service_account_key.json" ]
+	then
+	       gcloud iam service-accounts keys create service_account_key.json \
+		       --iam-account="$SERVICE_ACCOUNT"	
+	fi
+	gcloud compute scp service_account_key.json $HOST:.
+fi
+
 if [ -f "run_remote.sh" ]
 then
-	envsubst '$HOST $DEBUG $USER_NAME $USER_EMAIL' < run_remote.sh |
+	envsubst '$HOST $DEBUG $USER_NAME $USER_EMAIL $SERVICE_ACCOUNT' < run_remote.sh |
 		gcloud compute ssh $HOST --command="/bin/bash"
 fi
