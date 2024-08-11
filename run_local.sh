@@ -1,8 +1,22 @@
 #!/bin/bash
 
 if [ -f ".env" ]; then source .env; fi
+
 set -e
 if [ ! -z "$DEBUG" ]; then set -x; fi
+
+if [ -z "$SERVICE_ACCOUNT" ]
+then
+	SERVICE_ACCOUNT=$(gcloud iam service-accounts list \
+		--filter='displayName="Compute Engine default service account"' \
+		--format=json | jq -r .[0].email)
+fi
+
+if [ -z "$SERVICE_ACCOUNT" ]
+then	
+	echo "No service account specified and no default found." 2>&1
+	exit 1
+fi
 
 gcloud compute instances create "$HOST" \
 	--project="$PROJECT" \
@@ -31,6 +45,6 @@ fi
 
 if [ -f "run_remote.sh" ]
 then
-	envsubst '$HOST $DEBUG $USER_NAME $USER_EMAIL $SERVICE_ACCOUNT' < run_remote.sh |
+	envsubst '$HOST $DEBUG $USER_NAME $USER_EMAIL $SERVICE_ACCOUNT $PREAUTH' < run_remote.sh |
 		gcloud compute ssh $HOST --command="/bin/bash"
 fi
